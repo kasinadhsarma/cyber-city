@@ -1,0 +1,14 @@
+Sample Training Module Content
+This is a sample training module used for testing the training module management functionality in the cybersecurity platform.
+The file contains some basic information related to the training module.
+
+- Title: Sample Training Module
+- Category: General
+- Description: This file is used to test the training module management features of the platform.
+- Content:
+  - Introduction to the Training Module
+  - Training Module Objectives
+  - Training Module Content
+  - Conclusion
+
+End of file.
