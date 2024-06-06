@@ -25,6 +25,10 @@ const Login = ({ onLogin }) => {
     }
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = `https://accounts.google.com/o/oauth2/auth?client_id=AIzaSyC3ePPmuMYogAHFceXfokvC2xcrY34aRUM&redirect_uri=https://localhost:3000/auth/google/callback&response_type=code&scope=profile email`;
+  };
+
   return (
     <Box p={4} borderWidth={1} borderRadius="lg" overflow="hidden" maxW="md" mx="auto" mt={8}>
       <form onSubmit={handleLogin}>
@@ -49,6 +53,7 @@ const Login = ({ onLogin }) => {
           </FormControl>
           {error && <Text color="red.500" textAlign="center">{error}</Text>}
           <Button type="submit" colorScheme="teal" size="lg" mt={4}>Login</Button>
+          <Button onClick={handleGoogleLogin} colorScheme="red" size="lg" mt={4}>Sign in with Google</Button>
         </VStack>
       </form>
     </Box>
