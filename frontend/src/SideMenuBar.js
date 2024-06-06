@@ -27,6 +27,9 @@ const SideMenuBar = ({ onSelect }) => {
         <Button variant="ghost" onClick={() => { console.log('Jobs button clicked'); onSelect('jobs'); }}>
           Jobs
         </Button>
+        <Button variant="ghost" onClick={() => { console.log('AI button clicked'); onSelect('ai'); }}>
+          AI
+        </Button>
       </VStack>
     </Box>
   );

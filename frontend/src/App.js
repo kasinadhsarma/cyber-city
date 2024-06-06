@@ -8,6 +8,7 @@ import Login from './Login';
 import Logout from './Logout';
 import Register from './Register';
 import JobList from './JobList'; // Import JobList component
+import AIComponent from './AIComponent'; // Import AIComponent
 import axios from 'axios';
 import { Button, Box, VStack, Input, Text } from '@chakra-ui/react';
 
@@ -119,6 +120,8 @@ function App() {
         return <div>Training Modules</div>;
       case 'jobs':
         return <JobList />; // Render JobList component
+      case 'ai':
+        return <AIComponent />; // Render AIComponent
       case 'register':
         return <Register />;
       default:
