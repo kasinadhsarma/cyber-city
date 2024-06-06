@@ -7,6 +7,7 @@ import SideMenuBar from './SideMenuBar';
 import Login from './Login';
 import Logout from './Logout';
 import Register from './Register';
+import JobList from './JobList'; // Import JobList component
 import axios from 'axios';
 import { Button, Box, VStack, Input, Text } from '@chakra-ui/react';
 
@@ -117,7 +118,7 @@ function App() {
       case 'training':
         return <div>Training Modules</div>;
       case 'jobs':
-        return <div>Job Opportunities</div>;
+        return <JobList />; // Render JobList component
       case 'register':
         return <Register />;
       default:
