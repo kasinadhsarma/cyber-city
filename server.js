@@ -81,7 +81,7 @@ app.get('/api/logout', (req, res) => {
 
 app.get('/api/check-auth', (req, res) => {
   if (req.isAuthenticated()) {
-    res.json({ isAuthenticated: true, user: req.user });
+    res.json({ isAuthenticated: true, user: req.user, role: req.user.role });
   } else {
     res.json({ isAuthenticated: false });
   }
@@ -124,6 +124,11 @@ passport.serializeUser(function(user, done) {
 // Deserialize user
 passport.deserializeUser(function(id, done) {
   db.get('SELECT * FROM users WHERE id = ?', [id], function(err, user) {
+    if (err) {
+      console.error('Error deserializing user:', err);
+    } else {
+      console.log('User deserialized:', user);
+    }
     done(err, user);
   });
 });
@@ -283,10 +288,17 @@ app.post('/api/cybersecurity-files', upload.single('file'), (req, res) => {
 });
 
 app.get('/api/cybersecurity-files', (req, res) => {
+  console.log('req.user:', req.user); // Log the req.user object
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   const userRole = req.user.role; // Use the authenticated user's role from the session
   db.all('SELECT * FROM cybersecurity_files WHERE viewable_by LIKE ?', [`%${userRole}%`], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
+    }
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'No files found' });
     }
     res.json({ files: rows });
   });
@@ -353,10 +365,17 @@ app.post('/api/cybersecurity-files/search', (req, res) => {
 });
 
 app.get('/api/cybersecurity-files', (req, res) => {
+  console.log('req.user:', req.user); // Log the req.user object
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   const userRole = req.user.role; // Use the authenticated user's role from the session
   db.all('SELECT * FROM cybersecurity_files WHERE viewable_by LIKE ?', [`%${userRole}%`], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
+    }
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'No files found' });
     }
     res.json({ files: rows });
   });
