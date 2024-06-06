@@ -1,0 +1,14 @@
+Sample Cybersecurity File Content
+This is a sample file used for testing the file upload and download functionality in the cybersecurity platform.
+The file contains some basic information related to cybersecurity.
+
+- Title: Sample Cybersecurity File
+- Category: General
+- Description: This file is used to test the upload and download features of the platform.
+- Content:
+  - Introduction to Cybersecurity
+  - Common Cybersecurity Threats
+  - Best Practices for Cybersecurity
+  - Conclusion
+
+End of file.
