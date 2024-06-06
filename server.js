@@ -47,6 +47,14 @@ app.use(session({
     sameSite: 'none' // Allow cross-origin requests
   }
 }));
+
+const logStream = fs.createWriteStream('server.log', { flags: 'a' });
+
+app.use((req, res, next) => {
+  logStream.write(`Session ID: ${req.sessionID}\n`);
+  logStream.write(`Session cookie: ${req.headers.cookie}\n`);
+  next();
+});
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -69,7 +77,7 @@ app.post('/api/register', (req, res) => {
 
 // User authentication routes
 app.post('/api/login', passport.authenticate('local'), (req, res) => {
-  console.log(`User logged in successfully: ${req.user.username}`);
+  logStream.write(`User logged in successfully: ${req.user.username}\n`);
   res.cookie('connect.sid', req.sessionID, { httpOnly: true, secure: true, sameSite: 'none' });
   res.json({ message: 'Logged in successfully', user: req.user });
 });
@@ -118,6 +126,7 @@ passport.use(new LocalStrategy(
 
 // Serialize user
 passport.serializeUser(function(user, done) {
+  logStream.write(`Serializing user: ${JSON.stringify(user)}\n`);
   done(null, user.id);
 });
 
@@ -125,9 +134,9 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(id, done) {
   db.get('SELECT * FROM users WHERE id = ?', [id], function(err, user) {
     if (err) {
-      console.error('Error deserializing user:', err);
+      logStream.write(`Error deserializing user: ${err}\n`);
     } else {
-      console.log('User deserialized:', user);
+      logStream.write(`User deserialized: ${JSON.stringify(user)}\n`);
     }
     done(err, user);
   });
@@ -288,11 +297,13 @@ app.post('/api/cybersecurity-files', upload.single('file'), (req, res) => {
 });
 
 app.get('/api/cybersecurity-files', (req, res) => {
-  console.log('req.user:', req.user); // Log the req.user object
+  logStream.write(`req.user: ${JSON.stringify(req.user)}\n`);
   if (!req.user) {
+    logStream.write('Unauthorized access attempt\n');
     return res.status(401).json({ error: 'Unauthorized' });
   }
   const userRole = req.user.role; // Use the authenticated user's role from the session
+  logStream.write(`User role: ${userRole}\n`);
   db.all('SELECT * FROM cybersecurity_files WHERE viewable_by LIKE ?', [`%${userRole}%`], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
@@ -359,23 +370,6 @@ app.post('/api/cybersecurity-files/search', (req, res) => {
   db.all(query, params, (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
-    }
-    res.json({ files: rows });
-  });
-});
-
-app.get('/api/cybersecurity-files', (req, res) => {
-  console.log('req.user:', req.user); // Log the req.user object
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  const userRole = req.user.role; // Use the authenticated user's role from the session
-  db.all('SELECT * FROM cybersecurity_files WHERE viewable_by LIKE ?', [`%${userRole}%`], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'No files found' });
     }
     res.json({ files: rows });
   });

@@ -7,7 +7,9 @@ const FileList = ({ userRole }) => {
 
   useEffect(() => {
     if (userRole) {
-      axios.get(`https://localhost:4000/api/cybersecurity-files?role=${userRole}`)
+      axios.get(`https://localhost:4000/api/cybersecurity-files?role=${userRole}`, {
+        withCredentials: true,
+      })
         .then((response) => {
           setFiles(response.data.files);
         })
@@ -22,6 +24,7 @@ const FileList = ({ userRole }) => {
   const handleDownload = (fileId) => {
     axios.get(`https://localhost:4000/api/cybersecurity-files/download/${fileId}`, {
       responseType: 'blob',
+      withCredentials: true,
     })
       .then((response) => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
