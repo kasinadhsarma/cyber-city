@@ -1,0 +1,31 @@
+# Node modules
+node_modules/
+
+# Local environment files
+.env
+*.local
+
+# Log files
+logs/
+*.log
+
+# SSL certificates
+localhost-key.pem
+localhost.pem
+server.cert
+server.key
+
+# Database files
+*.db
+
+# Build artifacts
+build/
+dist/
+
+# Temporary files
+*.tmp
+*.swp
+
+# Other
+.DS_Store
+Thumbs.db
