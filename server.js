@@ -9,12 +9,20 @@ const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
+const SQLiteStore = require('connect-sqlite3')(session);
+const https = require('https');
+const fs = require('fs');
+
+const options = {
+  key: fs.readFileSync('localhost-key.pem'),
+  cert: fs.readFileSync('localhost.pem')
+};
 
 const app = express();
-const server = http.createServer(app);
+const server = https.createServer(options, app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "https://localhost:3000",
     methods: ["GET", "POST"]
   }
 });
@@ -22,12 +30,23 @@ const io = new Server(server, {
 const upload = multer({ dest: 'uploads/' });
 
 app.use(cors({
-  origin: "http://localhost:3000",
-  methods: ["GET", "POST"]
+  origin: "https://localhost:3000",
+  methods: ["GET", "POST"],
+  credentials: true
 }));
 app.use(express.json());
 
-app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
+app.use(session({
+  store: new SQLiteStore({ db: 'sessions.db' }),
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: true, // Set to true for development over HTTPS
+    sameSite: 'none' // Allow cross-origin requests
+  }
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -50,6 +69,8 @@ app.post('/api/register', (req, res) => {
 
 // User authentication routes
 app.post('/api/login', passport.authenticate('local'), (req, res) => {
+  console.log(`User logged in successfully: ${req.user.username}`);
+  res.cookie('connect.sid', req.sessionID, { httpOnly: true, secure: true, sameSite: 'none' });
   res.json({ message: 'Logged in successfully', user: req.user });
 });
 
@@ -69,12 +90,26 @@ app.get('/api/check-auth', (req, res) => {
 // Configure Passport Local Strategy
 passport.use(new LocalStrategy(
   function(username, password, done) {
+    console.log(`Authentication attempt for username: ${username}`);
     db.get('SELECT * FROM users WHERE username = ?', [username], function(err, user) {
-      if (err) { return done(err); }
-      if (!user) { return done(null, false, { message: 'Incorrect username.' }); }
+      if (err) {
+        console.error(`Error during authentication for username: ${username}`, err);
+        return done(err);
+      }
+      if (!user) {
+        console.log(`Authentication failed: Incorrect username for username: ${username}`);
+        return done(null, false, { message: 'Incorrect username.' });
+      }
       bcrypt.compare(password, user.password, function(err, result) {
-        if (err) { return done(err); }
-        if (!result) { return done(null, false, { message: 'Incorrect password.' }); }
+        if (err) {
+          console.error(`Error during password comparison for username: ${username}`, err);
+          return done(err);
+        }
+        if (!result) {
+          console.log(`Authentication failed: Incorrect password for username: ${username}`);
+          return done(null, false, { message: 'Incorrect password.' });
+        }
+        console.log(`Authentication successful for username: ${username}`);
         return done(null, user);
       });
     });
@@ -194,21 +229,40 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // New API endpoints for channel management
 app.post('/api/channels', (req, res) => {
+  if (!req.isAuthenticated()) {
+    console.log('Unauthorized attempt to create a channel');
+    console.log('Session ID:', req.sessionID);
+    console.log('Session cookie:', req.headers.cookie);
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   const { name, access_roles } = req.body;
+  console.log(`Channel creation attempt by user: ${req.user.username}, Channel name: ${name}`);
   db.run('INSERT INTO channels (name, access_roles) VALUES (?, ?)', [name, access_roles], function(err) {
     if (err) {
+      console.error('Error creating channel:', err);
       return res.status(500).json({ error: err.message });
     }
+    console.log(`Channel created successfully: ${name}`);
     res.json({ id: this.lastID });
   });
 });
 
 app.get('/api/channels', (req, res) => {
+  if (!req.isAuthenticated()) {
+    console.log('Unauthorized attempt to access channels');
+    console.log('Session ID:', req.sessionID);
+    console.log('Session cookie:', req.headers.cookie);
+    console.log('Request headers:', req.headers); // Added logging for request headers
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   const userRole = req.user.role; // Use the authenticated user's role from the session
+  console.log(`Channel access attempt by user: ${req.user.username}, Role: ${userRole}`);
   db.all('SELECT * FROM channels WHERE access_roles LIKE ?', [`%${userRole}%`], (err, rows) => {
     if (err) {
+      console.error('Error fetching channels:', err);
       return res.status(500).json({ error: err.message });
     }
+    console.log(`Channels fetched successfully for user: ${req.user.username}`);
     res.json({ channels: rows });
   });
 });
@@ -235,6 +289,16 @@ app.get('/api/cybersecurity-files', (req, res) => {
       return res.status(500).json({ error: err.message });
     }
     res.json({ files: rows });
+  });
+});
+
+app.post('/api/roles', (req, res) => {
+  const { name, permissions } = req.body;
+  db.run('INSERT INTO roles (name, permissions) VALUES (?, ?)', [name, permissions], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ id: this.lastID });
   });
 });
 
