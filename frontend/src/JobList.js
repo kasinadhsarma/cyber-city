@@ -10,7 +10,7 @@ const JobList = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await axios.get('https://localhost:4000/api/job-opportunities', { withCredentials: true });
+        const response = await axios.get('https://localhost:4000/api/jobs', { withCredentials: true });
         setJobs(response.data.jobs);
       } catch (err) {
         console.error('Error fetching job opportunities', err);
@@ -22,7 +22,7 @@ const JobList = () => {
 
   const handleCreateJob = async () => {
     try {
-      const response = await axios.post('https://localhost:4000/api/job-opportunities', {
+      const response = await axios.post('https://localhost:4000/api/jobs', {
         title: newJobTitle,
         description: newJobDescription,
       }, { withCredentials: true });
