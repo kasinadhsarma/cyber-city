@@ -6,13 +6,17 @@ const FileList = ({ userRole }) => {
   const [files, setFiles] = useState([]);
 
   useEffect(() => {
-    axios.get(`https://localhost:4000/api/cybersecurity-files?role=${userRole}`)
-      .then((response) => {
-        setFiles(response.data.files);
-      })
-      .catch((error) => {
-        console.error('Error fetching files:', error);
-      });
+    if (userRole) {
+      axios.get(`https://localhost:4000/api/cybersecurity-files?role=${userRole}`)
+        .then((response) => {
+          setFiles(response.data.files);
+        })
+        .catch((error) => {
+          console.error('Error fetching files:', error);
+        });
+    } else {
+      console.error('User role is undefined');
+    }
   }, [userRole]);
 
   const handleDownload = (fileId) => {
