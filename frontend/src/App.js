@@ -107,6 +107,7 @@ function App() {
           </>
         );
       case 'files':
+        console.log('User role:', userRole); // Log the user role
         return (
           <>
             <FileUpload />
