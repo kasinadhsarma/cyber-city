@@ -21,7 +21,7 @@ const FileList = ({ userRole }) => {
     }
   }, [userRole]);
 
-  const handleDownload = (fileId) => {
+  const handleDownload = (fileId, fileName) => {
     axios.get(`https://localhost:4000/api/cybersecurity-files/download/${fileId}`, {
       responseType: 'blob',
       withCredentials: true,
@@ -30,7 +30,7 @@ const FileList = ({ userRole }) => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', 'file'); // or pass the file name from the response
+        link.setAttribute('download', fileName); // Use the actual file name
         document.body.appendChild(link);
         link.click();
       })
@@ -48,7 +48,7 @@ const FileList = ({ userRole }) => {
               <Text>File Name: {file.originalname}</Text>
               <Text>Category: {file.category}</Text>
               <Text>Uploaded At: {new Date(file.uploadedAt).toLocaleString()}</Text>
-              <Button mt={2} colorScheme="teal" onClick={() => handleDownload(file.id)}>
+              <Button mt={2} colorScheme="teal" onClick={() => handleDownload(file.id, file.originalname)}>
                 Download
               </Button>
             </Box>
