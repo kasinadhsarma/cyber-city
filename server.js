@@ -36,6 +36,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
+
 app.use(session({
   store: new SQLiteStore({ db: 'sessions.db' }),
   secret: 'secret',
