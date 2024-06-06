@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, Input, Textarea, VStack, Text } from '@chakra-ui/react';
+import { Box, Button, Textarea, VStack, Text } from '@chakra-ui/react';
 import axios from 'axios';
 
 const AIComponent = () => {
