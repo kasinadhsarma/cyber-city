@@ -95,6 +95,73 @@ app.get('/api/check-auth', (req, res) => {
   }
 });
 
+app.get('/auth/google/callback', async (req, res) => {
+  const { code } = req.query;
+  const clientId = 'AIzaSyC3ePPmuMYogAHFceXfokvC2xcrY34aRUM';
+  const clientSecret = 'YOUR_GOOGLE_CLIENT_SECRET';
+  const redirectUri = 'https://localhost:3000/auth/google/callback';
+
+  try {
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+    });
+
+    const { access_token } = tokenResponse.data;
+
+    const userInfoResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+    });
+
+    const { id, email, name } = userInfoResponse.data;
+
+    // Check if the user already exists in the database
+    db.get('SELECT * FROM users WHERE google_id = ?', [id], (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (user) {
+        // User exists, log them in
+        req.login(user, (err) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          return res.redirect('/');
+        });
+      } else {
+        // User does not exist, create a new user
+        db.run('INSERT INTO users (username, email, google_id) VALUES (?, ?, ?)', [name, email, id], function (err) {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+
+          const newUser = {
+            id: this.lastID,
+            username: name,
+            email,
+            google_id: id,
+          };
+
+          req.login(newUser, (err) => {
+            if (err) {
+              return res.status(500).json({ error: err.message });
+            }
+            return res.redirect('/');
+          });
+        });
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to authenticate with Google' });
+  }
+});
+
 // Configure Passport Local Strategy
 passport.use(new LocalStrategy(
   function(username, password, done) {
