@@ -134,7 +134,7 @@ function App() {
 
   return (
     <div className="App">
-      <SideMenuBar onSelect={setSelectedSection} />
+      {isAuthenticated && <SideMenuBar onSelect={setSelectedSection} />}
       <div className="App-content">
         {renderSection()}
         {isAuthenticated && <Logout onLogout={() => setIsAuthenticated(false)} />}
