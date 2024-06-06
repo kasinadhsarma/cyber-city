@@ -302,6 +302,66 @@ app.post('/api/roles', (req, res) => {
   });
 });
 
+app.post('/api/cybersecurity-files/upload', upload.single('file'), (req, res) => {
+  const { originalname, filename, mimetype, size } = req.file;
+  const { category, viewable_by, downloadable_by } = req.body;
+  const uploadedAt = new Date().toISOString();
+  db.run('INSERT INTO cybersecurity_files (originalname, filename, mimetype, size, category, viewable_by, downloadable_by, uploadedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [originalname, filename, mimetype, size, category, viewable_by, downloadable_by, uploadedAt], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ id: this.lastID });
+  });
+});
+
+app.get('/api/cybersecurity-files/download/:id', (req, res) => {
+  const fileId = req.params.id;
+  db.get('SELECT * FROM cybersecurity_files WHERE id = ?', [fileId], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    const filePath = path.join(__dirname, 'uploads', row.filename);
+    res.download(filePath, row.originalname);
+  });
+});
+
+app.post('/api/cybersecurity-files/search', (req, res) => {
+  const { category, viewable_by, downloadable_by } = req.body;
+  let query = 'SELECT * FROM cybersecurity_files WHERE 1=1';
+  const params = [];
+  if (category) {
+    query += ' AND category = ?';
+    params.push(category);
+  }
+  if (viewable_by) {
+    query += ' AND viewable_by LIKE ?';
+    params.push(`%${viewable_by}%`);
+  }
+  if (downloadable_by) {
+    query += ' AND downloadable_by LIKE ?';
+    params.push(`%${downloadable_by}%`);
+  }
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ files: rows });
+  });
+});
+
+app.get('/api/cybersecurity-files', (req, res) => {
+  const userRole = req.user.role; // Use the authenticated user's role from the session
+  db.all('SELECT * FROM cybersecurity_files WHERE viewable_by LIKE ?', [`%${userRole}%`], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ files: rows });
+  });
+});
+
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
